@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import asyncio
 
 from prompt_toolkit.eventloop import use_asyncio_event_loop
@@ -29,7 +31,7 @@ _FOCUSED_BORDER_LEFT_BOTTOM = '┗'
 _FOCUSED_BORDER_RIGHT_BOTTOM = '┛'
 
 style = Style.from_dict({
-    'titlebar-druid': 'bg:#888888 #222222 bold',
+    'titlebar-logo': 'bg:#888888 #222222 bold',
     'titlebar': 'bg:#888888 #222222',
     'border': '#888888',
 })
@@ -59,28 +61,21 @@ druid_help = """
 
 """
 
-captures_titlebars = VSplit([
-    Window(height=1, content=FormattedTextControl(text=" Capture1"), style='class:titlebar'),
-    Window(height=1, content=FormattedTextControl(text=" Capture2"), style='class:titlebar')
-    ], padding=1, padding_char='┯', padding_style='class:border')
 captures = VSplit([
     TextArea(text="capture1 contents", style='class:capture-field', height=2),
     TextArea(text="capture2 contents", style='class:capture-field', height=2)
     ], padding=1, padding_char=_BORDER_VERTICAL, padding_style='class:border')
-output = HSplit([
-    Window(height=1, content=FormattedTextControl(text=" Output"), style='class:titlebar'),
-    TextArea(style='class:output-field', text="output contents")
-])
-druid_titlebar = VSplit([
-    Window(height=1, char='/', style='class:titlebar'),
-    Window(height=1, width=5, style='class:titlebar-druid', content=FormattedTextControl(text='druid'), align=WindowAlign.RIGHT),
-    Window(height=1, width=4, char='/', style='class:titlebar')])
+output = TextArea(style='class:output-field', text="output contents")
+statusbar = VSplit([
+    Window(height=1, content=FormattedTextControl(text="Input 1: -0.38764823  Input 2: 4.257895"), style='class:titlebar'),
+    Window(height=1, width=4, style='class:titlebar', content=FormattedTextControl(text='////'), align=WindowAlign.RIGHT),
+    Window(height=1, width=12, style='class:titlebar-logo', content=FormattedTextControl(text='druid v0.2.0'), align=WindowAlign.RIGHT),
+    Window(height=1, width=1, style='class:titlebar', content=FormattedTextControl(text=' '), align=WindowAlign.RIGHT),
+    ], padding=1, padding_style="class:titlebar")
 input = TextArea(height=1, prompt='> ', style='class:input-field', multiline=False, wrap_lines=False)
 container = HSplit([
-    captures_titlebars,
-    captures,
     output,
-    druid_titlebar,
+    statusbar,
     input,
 ])
 

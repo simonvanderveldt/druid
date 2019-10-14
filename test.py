@@ -2,15 +2,16 @@
 
 import asyncio
 
-from prompt_toolkit.eventloop import use_asyncio_event_loop
 from prompt_toolkit.application import Application
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.eventloop import use_asyncio_event_loop
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.widgets import TextArea
-from prompt_toolkit.layout.containers import VSplit, HSplit, Window, WindowAlign
+from prompt_toolkit.layout.containers import Float, FloatContainer, VSplit, HSplit, Window, WindowAlign
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.widgets import Frame
+from prompt_toolkit.layout.menus import CompletionsMenu
 from prompt_toolkit.styles import Style
+from prompt_toolkit.widgets import Frame, TextArea
 
 # Tell prompt_toolkit to use asyncio for the event loop.
 use_asyncio_event_loop()
@@ -35,6 +36,24 @@ style = Style.from_dict({
     'titlebar': 'bg:#888888 #222222',
     'border': '#888888',
 })
+
+DRUID_COMMANDS = {
+    "bootloader": "Reboot into bootloader",
+    "clear": "Clear the saved user script",
+    "first": "Set First as the current script and reboot",
+    "help": "Show help",
+    "identity": "Show crow's serial number",
+    "kill": "Restart the Lua environment",
+    "print": "Print the current user script",
+    "quit": "Quit druid",
+    "reset": "Reboot crow",
+    "run": "Send a file to crow and run it",
+    "upload": "Send a file to crow, store and run it",
+    "version": "Print the current firmware version"
+}
+
+druid_completer = WordCompleter(words=DRUID_COMMANDS.keys(), ignore_case=True,
+                                meta_dict=DRUID_COMMANDS)
 
 kb = KeyBindings()
 
@@ -72,12 +91,17 @@ statusbar = VSplit([
     Window(height=1, width=12, style='class:titlebar-logo', content=FormattedTextControl(text='druid v0.2.0'), align=WindowAlign.RIGHT),
     Window(height=1, width=1, style='class:titlebar', content=FormattedTextControl(text=' '), align=WindowAlign.RIGHT),
     ], padding=1, padding_style="class:titlebar")
-input = TextArea(height=1, prompt='> ', style='class:input-field', multiline=False, wrap_lines=False)
-container = HSplit([
-    output,
-    statusbar,
-    input,
-])
+input = TextArea(height=1, prompt='> ', completer=druid_completer, style='class:input-field', multiline=False, wrap_lines=False)
+container = FloatContainer(
+    content=HSplit([
+        output,
+        input,
+        statusbar,
+    ]),
+    floats=[
+        Float(content=CompletionsMenu(max_height=16, scroll_offset=1),
+              xcursor=True, ycursor=True)
+    ])
 
 app = Application(
     layout=Layout(container, focused_element=input),

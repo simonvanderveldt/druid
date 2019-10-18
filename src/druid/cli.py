@@ -23,8 +23,8 @@ def download():
     """
     try:
         crow = crowlib.connect()
-    except ValueError as err:
-        click.echo(err)
+    except OSError as err:
+        click.echo(err, err=True)
         sys.exit(1)
 
     crow.write(bytes("^^p", "utf-8"))

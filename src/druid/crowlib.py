@@ -8,28 +8,15 @@ import serial.tools.list_ports
 logger = logging.getLogger(__name__)
 
 def connect():
-    port = ""
+    """ Find crow based on USB VID and PID and connect to it """
     for item in serial.tools.list_ports.comports():
-        logger.info("comport {} - device {}".format(item[0], item[2]))
+        logger.info("comport %s - device %s", item[0], item[2])
         if "USB VID:PID=0483:5740" in item[2]:
             port = item[0]
-            logger.info('using {}'.format(port))
-    if port == "":
-        logger.error("crow not found, exit")
-        raise ValueError("can't find crow device")
-    try:
-        return serial.Serial(port, 115200, timeout=0.1)
-    except serial.SerialException as e:
-        logger.error("could not open comport {}".format(port), e)
-        raise ValueError("can't open serial port")
+            logger.info("using %s", port)
+            return serial.Serial(port, 115200, timeout=0.1)
 
-def reconnect():
-    try:
-        c = crow_connect()
-        myprint(" <online!>")
-        return c
-    except ValueError as err:
-        myprint(" <lost connection>")
+    raise OSError("can't find crow device")
 
 def writelines(writer, file):
     with open(file) as d:
@@ -53,13 +40,3 @@ def execute(writer, printer, file):
     writelines(writer, file)
     time.sleep(0.01)
     writer(bytes("^^e", 'utf-8'))
-
-# leaving this here for 'run a code chunk'
-#def execute( writer, printer, file ):
-#    printer(" running "+file+"\n\r")
-#    writer(bytes("```", 'utf-8'))
-#    writelines( writer, file )
-#    time.sleep(0.1)
-#    writer(bytes("```", 'utf-8'))
-#    time.sleep(0.1)
-#    writer(bytes("init()\n\r", 'utf-8'))

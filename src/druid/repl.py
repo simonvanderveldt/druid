@@ -15,13 +15,31 @@ from prompt_toolkit.layout.containers import (
     VSplit, HSplit,
     Window, WindowAlign,
 )
+from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.layout.screen import Char
 from prompt_toolkit.styles import Style
-from prompt_toolkit.widgets import TextArea
-from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.widgets import Label, TextArea
 
 from druid import crowlib
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+class PassThroughHandler(logging.Handler):
+    """ Log handler that appends the log messages it receives to another object """
+    def __init__(self, out, level=logging.INFO):
+        super().__init__(level)
+        self.out = out
+
+    def emit(self, record):
+        # self.out.text = record.getMessage()
+        # raise SystemExit(1)
+        # append(record.getMessage(), self.out)
+        new_text = self.out.text + record.getMessage().replace('\r', '')
+        self.out.buffer.document = Document(text=new_text, cursor_position=len(new_text))
 
 
 # monkey patch to fix https://github.com/monome/druid/issues/8
@@ -44,6 +62,7 @@ def druidparser(writer, cmd):
     Parser for druid commands
     Translates single letter commands into actions performed against crow
     """
+    global logger
     parts = cmd.split(maxsplit=1)
     if len(parts) == 0:
         return
@@ -67,6 +86,7 @@ def druidparser(writer, cmd):
     elif c == "p":
         writer(bytes("^^p", 'utf-8'))
     elif c == "h":
+        logger.info("TEST")
         myprint(druid_help)
     else:
         writer(bytes(cmd + "\r\n", 'utf-8'))
@@ -96,9 +116,12 @@ capture1 = TextArea(style='class:capture-field', height=2)
 capture2 = TextArea(style='class:capture-field', height=2)
 captures = VSplit([capture1, capture2])
 output_field = TextArea(style='class:output-field', text=druid_intro)
-statusbar = Window(height=1, char='/', style='class:line',
-                   content=FormattedTextControl(text='druid////'),
-                   align=WindowAlign.RIGHT)
+status = Label(text="")
+statusbar = VSplit([
+    Label(text="Status: "),
+    status,
+    Window(height=1, char='/', style='class:line', content=FormattedTextControl(text='druid////'),
+           align=WindowAlign.RIGHT)])
 input_field = TextArea(height=1, prompt='> ', multiline=False, wrap_lines=False,
                        style='class:input-field')
 container = HSplit([
@@ -108,6 +131,12 @@ container = HSplit([
     input_field])
 
 crow = None
+
+logging.getLogger("druid").addHandler(PassThroughHandler(out=output_field))
+logger.addHandler(PassThroughHandler(out=output_field))
+
+print(logger.handlers)
+logger.info("blabli")
 
 async def shell():
     global crow
@@ -135,6 +164,10 @@ async def shell():
     @kb.add('c-q', eager=True)
     def _(event):
         event.app.exit()
+
+    @kb.add('c-a', eager=True)
+    def _(event):
+        logger.info("This is a test")
 
     style = Style([
         ('capture-field', '#747369'),
@@ -216,9 +249,10 @@ def main(script=None):
     global crow
     try:
         crow = crowlib.connect()
-    except ValueError as err:
+    except OSError as err:
+        status.text = "disconnected"
         print(err)
-        sys.exit(1)
+        # sys.exit(1)
 
     # run script passed from command line
     if script:

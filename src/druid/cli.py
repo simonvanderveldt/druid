@@ -5,7 +5,7 @@ import time
 
 import click
 
-from druid import crowlib
+from druid.crowlib import Crow
 from druid import repl as druid_repl
 
 @click.group(invoke_without_command=True)
@@ -21,18 +21,12 @@ def download():
     """
     Download a file from crow and print it to stdout
     """
+    crow = Crow()
     try:
-        crow = crowlib.connect()
-    except ValueError as err:
-        click.echo(err)
-        sys.exit(1)
-
-    crow.write(bytes("^^p", "utf-8"))
-    click.echo(crow.read(1000000).decode())
-    crow.close()
-
-def myprint(string):
-    click.echo(string)
+        click.echo(crow.print())
+        crow.close()
+    except (FileNotFoundError, ConnectionError) as err:
+        sys.exit(err)
 
 @cli.command(short_help="Upload a file to crow")
 @click.argument("filename", type=click.Path(exists=True))
@@ -41,18 +35,20 @@ def upload(filename):
     Upload a file to crow.
     FILENAME is the path to the Lua file to upload
     """
+    crow = Crow()
     try:
-        crow = crowlib.connect()
-    except ValueError as err:
-        click.echo(err)
-        sys.exit(1)
+        with open(filename) as script_file:
+            crow.upload(script_file.read())
+    except (FileNotFoundError, ConnectionError) as err:
+        sys.exit(err)
 
-    crowlib.upload(crow.write, myprint, filename)
-    click.echo(crow.read(1000000).decode())
+    # Print logging from crow in case any errors occured during upload
+    click.echo(crow.read())
     click.echo("File uploaded")
-    time.sleep(0.5) # wait for new script to be ready
-    crow.write(bytes("^^p", "utf-8"))
-    click.echo(crow.read(1000000).decode())
+    # Wait for new script to be ready
+    time.sleep(0.5)
+    # Print the uploaded script
+    click.echo(crow.print())
     crow.close()
 
 @cli.command()

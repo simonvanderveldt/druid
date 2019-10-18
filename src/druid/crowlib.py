@@ -23,14 +23,6 @@ def connect():
         logger.error("could not open comport {}".format(port), e)
         raise ValueError("can't open serial port")
 
-def reconnect():
-    try:
-        c = crow_connect()
-        myprint(" <online!>")
-        return c
-    except ValueError as err:
-        myprint(" <lost connection>")
-
 def writelines(writer, file):
     with open(file) as d:
         lua = d.readlines()
@@ -53,13 +45,3 @@ def execute(writer, printer, file):
     writelines(writer, file)
     time.sleep(0.01)
     writer(bytes("^^e", 'utf-8'))
-
-# leaving this here for 'run a code chunk'
-#def execute( writer, printer, file ):
-#    printer(" running "+file+"\n\r")
-#    writer(bytes("```", 'utf-8'))
-#    writelines( writer, file )
-#    time.sleep(0.1)
-#    writer(bytes("```", 'utf-8'))
-#    time.sleep(0.1)
-#    writer(bytes("init()\n\r", 'utf-8'))

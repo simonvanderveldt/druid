@@ -57,7 +57,6 @@ def upload(filename):
     crow.close()
 
 @cli.command()
-@click.argument("filename", type=click.Path(exists=True), required=False)
-def repl(filename):
+def repl():
     """ Start interactive terminal """
-    druid_repl.main(filename)
+    druid_repl.main()
